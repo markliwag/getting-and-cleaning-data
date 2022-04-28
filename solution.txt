@@ -1,0 +1,38 @@
+dataset = pd.read_excel('Sample_Data_Set.xlsx')
+agent_group = dataset.groupby(['Agent'])
+agent_email = agent_group['Channel'].apply(lambda x: x.str.contains('Email').sum())
+agent_phone = agent_group['Channel'].apply(lambda x: x.str.contains('Phone').sum())
+agent_chat = agent_group['Channel'].apply(lambda x: x.str.contains('Chat').sum())
+first_answer = pd.concat([agent_email, agent_phone, agent_chat], axis = 'columns',sort = False).reset_index()
+first_answer.columns.values[1] = 'Email'
+first_answer.columns.values[2] = 'Phone'
+first_answer.columns.values[3] = 'Chat'
+first_answer
+
+filt = (dataset['Agent'] == 'Agent 1') & (dataset['Rating'] == 'Bad')
+answer_2 = dataset.loc[filt]
+answer_2.style.format({"Date":lambda t: t.strftime("%m/%d/%Y")})
+
+
+import datetime
+dataset_na = dataset[~dataset['Handling Time'].notnull()]
+result = pd.to_datetime(dataset_na['End Time'], format = '%H:%M:%S %p') - pd.to_datetime(dataset_na['Start Time'], format = '%H:%M:%S %p')
+dataset_na['Handling Time'] = result
+dataset_na['Date'] = pd.to_datetime(dataset_na['Date']).dt.date
+dataset_na = dataset_na[["Date", "Start Time", "End Time", "Agent", "Channel", "Handling Time"]]
+dataset_na.style.format({"Date":lambda t: t.strftime("%m/%d/%Y")})
+
+
+
+sort_order = ['January','February','March','April','May','June','July','August','September','October','November','December']
+month_group = dataset.groupby(['Month'])
+month_good = month_group['Rating'].apply(lambda x: x.str.contains('Good').sum())
+month_bad = month_group['Rating'].apply(lambda x: x.str.contains('Bad').sum())
+fourth_answer = pd.concat([month_good, month_bad], axis = 'columns',sort = False).reset_index()
+fourth_answer.columns.values[1] = 'Good'
+fourth_answer.columns.values[2] = 'Bad'
+fourth_answer['CSAT Score'] = (fourth_answer['Good'] / (fourth_answer['Good'] + fourth_answer['Bad']))
+fourth_answer.index = pd.CategoricalIndex(fourth_answer['Month'],categories=sort_order,ordered = True)
+fourth_answer = fourth_answer.sort_index().reset_index(drop=True)
+fourth_answer = fourth_answer.style.format({'CSAT Score': "{:.2%}"})
+fourth_answer
